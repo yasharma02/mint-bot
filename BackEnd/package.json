@@ -1,0 +1,22 @@
+{
+  "name": "sign-now-send-later-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon ./src/TxnSchedulerController.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "mongoose": "^6.5.2",
+    "web3": "^1.7.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
+  }
+}
