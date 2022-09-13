@@ -35,7 +35,7 @@ const CompletedTxnSchema = new mongoose.Schema({
   },
   rpcURL: {
     type: String,
-    required: true,
+    required: false,
   },
   chainID: {
     type: String,
