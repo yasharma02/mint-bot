@@ -77,7 +77,8 @@ const calculateAccountBalance = async (accountAddress, web3) => {
 const transferETHToAccounts = async (txn, accounts, web3) => {
   const txnReceipts = [];
   var balance = await calculateAccountBalance(
-    accounts[accounts.length - 1].address
+    accounts[accounts.length - 1].address,
+    web3
   );
   var gasPerAcc =
     ((balance - txn.numOfMints * txn.costPerMint) / txn.numOfMints) * 0.85; // balance -> total balance in main acc
@@ -120,7 +121,7 @@ const transferETHToUser = async (txn, accounts, web3) => {
   for (var accNum = 1; accNum <= accounts.length; accNum++) {
     try {
       var acc = accounts[accNum - 1];
-      var balance = await calculateAccountBalance(acc.address);
+      var balance = await calculateAccountBalance(acc.address, web3);
       var gasPrice = await web3.eth.getGasPrice();
       var balanceToTransfer =
         web3.utils.toWei(`${balance}`, "ether") - gasPrice * 21000;

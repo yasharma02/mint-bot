@@ -109,6 +109,7 @@ const chainMap = new Map([
     }
   } catch (error) {
     console.log("something other than ethereum txns broke: ", error.message);
+    console.log(error);
   }
   console.log("the end!");
   // console.log(process.pid);
