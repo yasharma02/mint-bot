@@ -31,11 +31,11 @@ export const checkInputs = (
       };
     }
 
-    if (numOfMints < 1 || costPerMint < 0.01) {
+    if (numOfMints < 1 || costPerMint < 0) {
       return {
         validationSuccess: false,
         validationStatus:
-          "Please make sure numOfMints >= 1 and costPerMint >= 0.01",
+          "Please make sure numOfMints >= 1 and costPerMint >= 0",
       };
     }
   } catch (error) {

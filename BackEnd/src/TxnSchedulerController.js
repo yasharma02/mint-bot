@@ -20,7 +20,7 @@ app.post("/txn/schedule", (req, res) => {
     body.methodName,
     body.numOfMints,
     body.costPerMint,
-    body.userMainAccPubAddress,
+    body.userMainTxnHash,
     body.userMainAcc,
     body.rpcURL,
     body.chainID

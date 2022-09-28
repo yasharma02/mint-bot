@@ -14,6 +14,7 @@ export const scheduleTxns = async (
   rpcURL,
   chainStatus
 ) => {
+  // get chainID
   const chainID = chainStatus.substring(chainStatus.search("ChainId") + 9);
   console.log(chainID);
 
@@ -64,6 +65,24 @@ export const scheduleTxns = async (
         params: [transactionParameters],
       });
       console.log("Txn Hash is " + txHash);
+      // console.log(typeof txHash);
+
+      // use TxnHash to check whether txn mined yet
+      var receipt = await getTxnReceipt(window.web3, txHash);
+      for (var count = 1; count <= 4; count++) {
+        if (receipt != null) {
+          break;
+        }
+        console.log("Waiting 12 secs for user main txn to get mined");
+        await sleep(12000);
+        receipt = await getTxnReceipt(window.web3, txHash);
+        if (count == 4) {
+          return {
+            success: false,
+            status: "user eth send txn didn't get mined",
+          };
+        }
+      }
 
       // create input JSON body
       inputParameters.contractAddress = contractAddress;
@@ -75,10 +94,42 @@ export const scheduleTxns = async (
       inputParameters.costPerMint = costPerMint;
       inputParameters.rpcURL = rpcURL;
       inputParameters.chainID = chainID;
-      inputParameters.userMainAccPubAddress = userMainAccount.address;
+      inputParameters.userMainTxnHash = txHash;
       inputParameters.userMainAcc = JSON.stringify(userMainAccount);
 
       userMainAccount = null;
+
+      // send request to server
+      var serverResponseSuccess = false;
+      var serverResponseStatus = "";
+      const { responseSuccess, responseMessage, responseCode } =
+        await txnInputsToServer(inputParameters);
+      console.log(
+        "response message is " +
+          responseMessage +
+          " response code is " +
+          responseCode
+      );
+      if (!responseSuccess) {
+        serverResponseSuccess = false;
+        serverResponseStatus =
+          "Something went wrong while sending your txn, " +
+          responseMessage.slice(0, 100);
+      } else {
+        if (responseCode != 200) {
+          serverResponseSuccess = false;
+          serverResponseStatus =
+            "Something went wrong while scheduling your txn at backend, " +
+            responseMessage.slice(0, 100);
+        } else {
+          serverResponseSuccess = true;
+          serverResponseStatus = `Success, ${responseMessage}`;
+        }
+      }
+      return {
+        success: serverResponseSuccess,
+        status: serverResponseStatus,
+      };
     } catch (error) {
       return {
         success: false,
@@ -92,39 +143,17 @@ export const scheduleTxns = async (
         "Please make sure Metamask is installed and ethereum wallet is connected",
     };
   }
-
-  // send request to server
-  const { responseSuccess, responseMessage, responseCode } =
-    await txnInputsToServer(inputParameters);
-  console.log(
-    "response message is " +
-      responseMessage +
-      " response code is " +
-      responseCode
-  );
-  if (!responseSuccess) {
-    return {
-      success: false,
-      status:
-        "Something went wrong while sending your txn, " +
-        responseMessage.slice(0, 100),
-    };
-  } else {
-    if (responseCode != 200) {
-      return {
-        success: false,
-        status:
-          "Something went wrong while scheduling your txn at backend, " +
-          responseMessage.slice(0, 100),
-      };
-    } else {
-      return {
-        success: true,
-        status: `Success, ${responseMessage}`,
-      };
-    }
-  }
 };
+
+const getTxnReceipt = async (web3, txHash) => {
+  var receipt = await web3.eth.getTransactionReceipt(txHash);
+  console.log(receipt);
+  return receipt;
+};
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export const connectWallet = async () => {
   if (window.ethereum) {

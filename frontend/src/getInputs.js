@@ -11,15 +11,15 @@ const ScheduleTxn = (props) => {
   const [status, setStatus] = useState("");
   const [chainStatus, setChainStatus] = useState("");
   const chainMap = new Map([
-    ["0x5", "Goerli Testnet"],
-    ["0x1", "Ethereum mainnet"],
-    ["0x38", "BINANCE_SMART_CHAIN"],
-    ["0x89", "Polygon_Mainnet"],
-    ["0xa86a", "Avalanche_Network"],
-    ["0x13881", "Mumbai_Testnet"],
-    ["0x3", "Ropsten_Test_Network"],
-    ["0x4", "Rinkeby_Test_Network"],
-    ["0x2a", "Kovan_Test_Network"],
+    ["0x5", "GOERLI_TESTNET"],
+    ["0x1", "ETH_MAINNET"],
+    //["0x38", "BINANCE_SMART_CHAIN"],
+    ["0x89", "POLYGON_MAINNET"],
+    //["0xa86a", "AVALANCHE_NETWORK"],
+    ["0x13881", "MUMBAI_TESTNET"],
+    ["0x3", "ROPSTEN_TESTNET"],
+    ["0x4", "RINKEBY_TESTNET"],
+    ["0x2a", "KOVAN_TESTNET"],
   ]);
 
   const [contractAddress, setContractAddress] = useState("");
