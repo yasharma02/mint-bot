@@ -57,9 +57,9 @@ const saveTxnToDB = async (
         accountsObject: accountsObject,
         ethToAccountsTransferReceiptObj: ethToAccountsTransferReceiptObj,
       });
-      console.log("oldEntry: ", oldEntry);
+      // console.log("oldEntry: ", oldEntry);
       const newEntry = await TxnDetailsModel.findById(docId);
-      console.log("newEntry: ", newEntry);
+      // console.log("newEntry: ", newEntry);
     });
   } catch (error) {
     console.log(error);

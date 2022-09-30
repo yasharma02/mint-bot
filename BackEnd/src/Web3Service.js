@@ -117,7 +117,7 @@ const getAccounts = (accStrings, web3) => {
   for (var acc of accStrings) {
     var accDecrypt = web3.eth.accounts.decrypt(JSON.parse(acc), "password");
     accounts.push(accDecrypt);
-    console.log("Account: " + accDecrypt);
+    // console.log("Account: " + accDecrypt);
   }
   return accounts;
 };

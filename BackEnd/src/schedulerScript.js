@@ -17,7 +17,7 @@ const { fork } = require("child_process");
     for (var txn of queuedTxns) {
       if (currentDate - txn.time >= 0) {
         txnsDue.push(txn);
-        console.log("Txn", txn);
+        // console.log("Txn", txn);
         // remove that entry from TxnDetailsModel
         await TxnDetailsModel.deleteOne({ _id: txn._id });
       }
@@ -55,15 +55,15 @@ const { fork } = require("child_process");
         var mintRes = message.mintRes;
         var ethTransferRes = message.ethTransferRes;
         var nftTransferRes = message.nftTransferRes;
-        console.log(
-          `${message.count} - got wallet mint result for child process txn ${txn._id}... ${mintRes}`
-        );
-        console.log(
-          `${message.count} - got wallet eth transfer result for child process txn ${txn._id}... ${ethTransferRes}`
-        );
-        console.log(
-          `${message.count} - got wallet nft transfer result for child process txn ${txn._id}... ${nftTransferRes}`
-        );
+        // console.log(
+        //   `${message.count} - got wallet mint result for child process txn ${txn._id}... ${mintRes}`
+        // );
+        // console.log(
+        //   `${message.count} - got wallet eth transfer result for child process txn ${txn._id}... ${ethTransferRes}`
+        // );
+        // console.log(
+        //   `${message.count} - got wallet nft transfer result for child process txn ${txn._id}... ${nftTransferRes}`
+        // );
         if (mintRes != "") {
           childProcessesResults[message.count].txnExecutionReceiptObj.push(
             mintRes
