@@ -39,11 +39,11 @@ const TxnDetailsSchema = new mongoose.Schema({
   },
   accountsObject: {
     type: [String], // contains public and encrypted private keys of user main account and all new accounts created
-    required: true,
+    required: false,
   },
   ethToAccountsTransferReceiptObj: {
     type: [String], // from user main account to all new accounts created
-    required: true,
+    required: false,
   },
 });
 

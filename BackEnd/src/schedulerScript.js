@@ -1,20 +1,8 @@
 // this script has to be scheduled to run once every minute in cron job
-const Web3 = require("web3");
-const config = require("./utils/config");
 const { connectDB } = require("./utils/connectDB.js");
-const { CompletedTxnsModel } = require("./models/completedTxns.js");
 const { TxnDetailsModel } = require("./models/txnDetails.js");
-const {
-  // mint,
-  // transferETHToUser,
-  // transferNFT,
-  mintPerWallet,
-  transferETHToUserPerWallet,
-  transferNFTPerWallet,
-  getAccounts,
-} = require("./Web3Service.js");
-
-const chainMap = config.CHAIN_MAP;
+const { CompletedTxnsModel } = require("./models/completedTxns.js");
+const { fork } = require("child_process");
 
 (async () => {
   const conn = await connectDB();
@@ -36,80 +24,90 @@ const chainMap = config.CHAIN_MAP;
     }
     console.log("Total txns due " + txnsDue.length);
 
+    var childProcesses = new Array(txnsDue.length);
+    var childProcessesResults = [];
+    var childProcessResultCount = 0;
+    var count = 0;
     for (var txn of txnsDue) {
-      var web3;
-      var accounts;
-      var executionRes = [];
-      var nftTransferToUserRes = [];
-      var ethTransferToUserRes = [];
+      console.log(`${count} - starting child process for txn ${txn._id}...`);
 
-      if (chainMap.has(txn.chainID)) {
-        web3 = new Web3(chainMap.get(txn.chainID));
-      } else {
-        web3 = new Web3(txn.rpcURL);
-      }
+      var result = new Object();
+      result.ethToAccountsTransferReceiptObj =
+        txn.ethToAccountsTransferReceiptObj;
+      result.time = txn.time;
+      result.accountsObject = txn.accountsObject;
+      result.userPublicAddress = txn.userPublicAddress;
+      result.contractAddress = txn.contractAddress;
+      result.rpcURL = txn.rpcURL;
+      result.chainID = txn.chainID;
+      result.ethFromAccountsTransferReceiptObj = [];
+      result.txnExecutionReceiptObj = [];
+      result.nftFromAccountsTransferReceiptObj = [];
+      childProcessesResults.push(result);
 
-      // get accounts
-      accounts = getAccounts(txn.accountsObject, web3);
-      console.log("Accounts: " + accounts.length);
-
-      // tasks per wallet
-      for (var accNum = 1; accNum <= accounts.length; accNum++) {
-        var acc = accounts[accNum - 1];
-        var mintRes;
-        var ethTransferRes;
-        var nftTransferRes;
-
-        if (accNum != accounts.length) {
-          mintRes = await mintPerWallet(txn, acc, web3);
-          console.log(`NFT mint for account ${accNum}: ` + mintRes);
-          executionRes.push(mintRes);
-
-          nftTransferRes = await transferNFTPerWallet(txn, acc, mintRes, web3);
-          console.log(`NFT transfer from account ${accNum}: ` + nftTransferRes);
-          nftTransferToUserRes.push(nftTransferRes);
-        }
-        ethTransferRes = await transferETHToUserPerWallet(txn, acc, web3);
-        console.log(`ETH transfer from account ${accNum}: ` + ethTransferRes);
-        ethTransferToUserRes.push(ethTransferRes);
-      }
-
-      // send txn for each account to SendTxnService
-      // executionRes = await mint(txn, accounts, web3);
-      console.log("Number of NFT mint txns " + executionRes.length);
-
-      // transfer nft from all accounts created to user public address
-      // nftTransferToUserRes = await transferNFT(
-      //   txn,
-      //   accounts,
-      //   executionRes,
-      //   web3
-      // );
-      console.log(
-        "Number of NFTs transferred to user " + nftTransferToUserRes.length
-      );
-
-      // transfer dust from user main account and all accounts created to user public address
-      // ethTransferToUserRes = await transferETHToUser(txn, accounts, web3);
-      console.log(
-        "Number of ETH dust transfers to user " + ethTransferToUserRes.length
-      );
-
-      // save all details to CompletedTxnsModel
-      await CompletedTxnsModel.create({
-        ethToAccountsTransferReceiptObj: txn.ethToAccountsTransferReceiptObj,
-        ethFromAccountsTransferReceiptObj: ethTransferToUserRes,
-        txnExecutionReceiptObj: executionRes,
-        nftFromAccountsTransferReceiptObj: nftTransferToUserRes,
-        accountsObject: txn.accountsObject,
-        userPublicAddress: txn.userPublicAddress,
-        contractAddress: txn.contractAddress,
-        time: txn.time,
-        rpcURL: txn.rpcURL,
-        chainID: txn.chainID,
+      childProcesses[count] = fork("./src/utils/txnOperations.js");
+      childProcesses[count].send({
+        txnNumber: count,
+        txn: txn,
       });
-      console.log("successfully added to CompletedTxnsModel");
+      childProcesses[count].on("message", (message) => {
+        // console.log("I am here", message);
+        var mintRes = message.mintRes;
+        var ethTransferRes = message.ethTransferRes;
+        var nftTransferRes = message.nftTransferRes;
+        console.log(
+          `${message.count} - got wallet mint result for child process txn ${txn._id}... ${mintRes}`
+        );
+        console.log(
+          `${message.count} - got wallet eth transfer result for child process txn ${txn._id}... ${ethTransferRes}`
+        );
+        console.log(
+          `${message.count} - got wallet nft transfer result for child process txn ${txn._id}... ${nftTransferRes}`
+        );
+        if (mintRes != "") {
+          childProcessesResults[message.count].txnExecutionReceiptObj.push(
+            mintRes
+          );
+        }
+        if (nftTransferRes != "") {
+          childProcessesResults[
+            message.count
+          ].nftFromAccountsTransferReceiptObj.push(nftTransferRes);
+        }
+        childProcessesResults[
+          message.count
+        ].ethFromAccountsTransferReceiptObj.push(ethTransferRes);
+      });
+      childProcesses[count].on("error", function (error) {
+        console.log("child process error ", error);
+      });
+      childProcesses[count].on("exit", function (code, signal) {
+        console.log(
+          "child process exited with " + `code ${code} and signal ${signal}`
+        );
+        childProcessResultCount++;
+      });
+      console.log(
+        `${count} - child process for txn ${txn._id} started... moving on`
+      );
+
+      count++;
     }
+    var pro = new Promise(async (resolve, reject) => {
+      while (childProcessResultCount != txnsDue.length) {
+        console.log(`waiting for txn processes to finish`);
+        console.log("txn processes completed: ", childProcessResultCount);
+        await sleep(10000);
+      }
+      // console.log(childProcessesResults);
+      resolve();
+    });
+
+    await pro;
+    await CompletedTxnsModel.create(childProcessesResults);
+    console.log(
+      `successfully added ${childProcessesResults.length} txns to CompletedTxnsModel`
+    );
   } catch (error) {
     console.log("something other than ethereum txns broke: ", error.message);
     console.log(error);
@@ -118,3 +116,7 @@ const chainMap = config.CHAIN_MAP;
   // console.log(process.pid);
   process.exit(1);
 })();
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
