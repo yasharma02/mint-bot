@@ -1,7 +1,6 @@
 require("dotenv").config();
 
-const DB_URI =
-  "mongodb+srv://alpha-zero:UDoPac41XlFuZFKE@cluster0.aolxcqx.mongodb.net/?retryWrites=true&w=majority";
+const DB_URI = "mongodb+srv://";
 const PORT = 8000;
 const ETH_MAINNET =
   "https://eth-mainnet.g.alchemy.com/v2/8XQRCLTYdnjXh2xUhba1Rt-k1Y5mVD0c";
